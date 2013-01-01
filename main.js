@@ -32,13 +32,17 @@ port.onMessage.addListener(function (msg) {
 
 var injectee = (function () {
 	
-  var eventspyState = document.createElement('div');
+  var eventspyState     = document.createElement('div'),
+      eventspyContainer = document.createElement('div');
+	
+	eventspyContainer.id = "eventspy";
 	
 	eventspyState.id = "eventspy-status";	
 	eventspyState.style.display = 'none';
 		
 	eventspyState.innerHTML = "stop";
-	document.body.appendChild(eventspyState);
+	eventspyContainer.appendChild(eventspyState);
+	document.body.appendChild(eventspyContainer);
 	
 	var comm = (function () {
 		
@@ -47,7 +51,7 @@ var injectee = (function () {
 			  
 	  msgContainer.id = 'eventspy-msg-pool';
 	  msgContainer.style.display = 'none';
-	  document.body.appendChild(msgContainer);
+	  eventspyContainer.appendChild(msgContainer);
 		
 		function send() {
 			if (eventspyState.innerHTML == "start") {
@@ -72,6 +76,44 @@ var injectee = (function () {
 		};
 	})();
 	
+	var walkTheDOM = function walk(node, func) {
+    func(node);
+    node = node.firstChild;
+    while (node) {
+        walk(node, func);
+        node = node.nextSibling;
+    }
+  };
+	
+	function registerEvent(evt, listener) {
+	  var targetNodeID = [evt.type, evt.pageX, evt.pageY, evt.timeStamp].join('-');
+
+    if (typeof evt.target.hasAttribute === 'function' && evt.target.hasAttribute('data-eventspy-target-node-id')) {
+      targetNodeID = targetNodeID + " " + evt.target.getAttribute('data-eventspy-target-node-id');
+    }
+    
+    if (typeof evt.target.setAttribute === 'function') {
+      evt.target.setAttribute('data-eventspy-target-node-id', targetNodeID);
+    }
+
+	  evtMsgObj = {
+		  "name": evt.toString(),
+		  "type": evt.type,
+		  "pageX": evt.pageX,
+		  "pageY": evt.pageY,
+		  "handler": "" + listener.valueOf() + "",
+		  "timeStamp": evt.timeStamp,
+		  "targetNodeID": targetNodeID, 
+	  };
+	  
+	  comm.send({
+		  'eventspy-type': 'fired',
+		  'data': {
+		    'event': evtMsgObj
+		  }
+	  });
+	}
+	
 	Element.prototype.realAddEventListener = Element.prototype.addEventListener; 
 	Element.prototype.addEventListener = function (type, listener, useCapture) { 	
 	  comm.send({
@@ -87,31 +129,58 @@ var injectee = (function () {
 	
 	  this.realAddEventListener(type, function (evt) {
       if (eventspyState.innerHTML == "start") {
-        var targetNodeID = [evt.type, evt.pageX, evt.pageY, evt.timeStamp].join('-');
-        if (evt.target.hasAttribute('data-eventspy-target-node-id')) {
-          targetNodeID = targetNodeID + " " + evt.target.getAttribute('data-eventspy-target-node-id');
-        }
-        evt.target.setAttribute('data-eventspy-target-node-id', targetNodeID);
-
-    	  evtMsgObj = {
-				  "name": evt.toString(),
-				  "type": evt.type,
-				  "pageX": evt.pageX,
-				  "pageY": evt.pageY,
-				  "handler": "" + listener.valueOf() + "",
-				  "timeStamp": evt.timeStamp,
-				  "targetNodeID": targetNodeID, 
-			  };
-			
-			  comm.send({
-				  'eventspy-type': 'fired',
-				  'data': {
-				    'event': evtMsgObj
-				  }
-			  });
+        registerEvent(evt, listener);
 		  }
 	  }, useCapture);
 	};
+	
+	walkTheDOM(document.body, function (node) {
+	
+	  function checkEventProperties (node) {
+	    var properties = [
+        'onclick',
+        'ondblclick',
+        'onmousedown',
+        'onmousemove',
+        'onmouseover',
+        'onmouseout',
+        'onmouseup'
+      ];
+
+      properties.forEach(function (prop) {
+        var origCb;
+        
+        if (typeof node[prop] === 'function') {
+          origCb = node[prop];
+          
+          if (!node.dataset.eventSpyCb) {
+            node[prop] = (function (event) {
+              registerEvent(event, origCb);
+              origCb.call(event);
+            });
+          }
+          
+          node.dataset.eventSpyCb = true;
+        }
+        
+      });
+	  }
+	
+	  if (node.id != 'eventspy') {
+
+      checkEventProperties(node);
+      
+      if (typeof node.realAddEventListener === 'function') {
+        node.realAddEventListener('DOMSubtreeModified', function (event) {
+          walkTheDOM(event.target, checkEventProperties);
+        });      
+      }
+      
+    }
+	
+	});
+	
+	
 }).valueOf();
 
 var comm = (function () {
