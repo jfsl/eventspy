@@ -87,14 +87,13 @@ var injectee = (function () {
   };
 	
 	function registerEvent(evt, listener) {
-	  var targetNodeID = [evt.type, evt.pageX, evt.pageY, evt.timeStamp].join('-');
+	  var targetNodeID;
 
-    if (typeof evt.target.hasAttribute === 'function' && evt.target.hasAttribute('data-eventspy-target-node-id')) {
-      targetNodeID = targetNodeID + " " + evt.target.getAttribute('data-eventspy-target-node-id');
-    }
-    
-    if (typeof evt.target.setAttribute === 'function') {
-      evt.target.setAttribute('data-eventspy-target-node-id', targetNodeID);
+    if (!evt.target.dataset.eventspyTargetNodeId) {
+      targetNodeID = [evt.type, evt.pageX, evt.pageY, evt.timeStamp].join('-');
+      evt.target.dataset.eventspyTargetNodeId = targetNodeID;
+    } else {
+      targetNodeID = evt.target.dataset.eventspyTargetNodeId;
     }
 
 	  evtMsgObj = {
