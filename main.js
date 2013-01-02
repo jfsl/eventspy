@@ -156,7 +156,7 @@ var injectee = (function () {
           if (!node.dataset.eventSpyCb) {
             node[prop] = (function (event) {
               registerEvent(event, origCb);
-              origCb.call(event);
+              origCb.call(event, this);
             });
           }
           
