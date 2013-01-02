@@ -25,6 +25,7 @@ port.onMessage.addListener(function (msg) {
     case "start-frontend": {
       
       state = "start";
+      $('#eventspy-status').html(state);
       
     }
   }
@@ -195,10 +196,10 @@ var comm = (function () {
 	    msgContainer = document.getElementById('eventspy-msg-pool');
 	  } else {
 		    
-			  $('div[data-eventspy-msg="true"]', msgContainer).each(function (idx, obj) {
-				  queue.push(JSON.parse(obj.innerHTML));
-				  $(obj).remove();
-			  });
+		  $('div[data-eventspy-msg="true"]', msgContainer).each(function (idx, obj) {
+			  queue.push(JSON.parse(obj.innerHTML));
+			  $(obj).remove();
+		  });
 	
 		  if (port) {
 		
@@ -221,7 +222,8 @@ var comm = (function () {
 	
 	return {
 		startPoll: function () {
-			setInterval(poll, 1000);
+		  $('#eventspy').bind('DOMSubtreeModified', poll);
+			setTimeout(poll, 1000);
 		}
 	};
 
