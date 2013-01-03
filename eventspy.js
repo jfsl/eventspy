@@ -12,13 +12,14 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 
 	function drawEventDiv(evtObj) {
 		var eventDiv      = _window.document.createElement('h3'),
-		    codeDiv       = _window.document.createElement('div');
-		    
-		eventDiv.innerHTML = [evtObj.data.event.timeStamp, " -> ",
-						             evtObj.data.event.name, " : ",
-						             evtObj.data.event.type, " (",				
-						             evtObj.data.event.pageX, ", ",
-						             evtObj.data.event.pageY, ")"].join('');
+		    codeDiv       = _window.document.createElement('div'),
+		    eventDate     = new Date(evtObj.data.event.timeStamp);
+
+		eventDiv.innerHTML = [eventDate.toLocaleTimeString(), " -> ",
+						              evtObj.data.event.name, " : ",
+						              evtObj.data.event.type, " (",				
+						              evtObj.data.event.pageX, ", ",
+						              evtObj.data.event.pageY, ")"].join('');
 						   
 		eventDiv.addEventListener('mouseover', function (evt) {
 			
