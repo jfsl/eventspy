@@ -222,7 +222,7 @@ var comm = (function () {
 	return {
 		startPoll: function () {
 		  $('#eventspy').bind('DOMSubtreeModified', poll);
-			setTimeout(poll, 1000);
+			setInterval(poll, 1000);
 		}
 	};
 

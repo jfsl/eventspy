@@ -7,7 +7,7 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
   if (subscribers[tabId] != null) {
     for (idx = 0; idx < subscribers[tabId].length; idx++) {
       subscribers[tabId][idx].postMessage({
-        'action': 'clear'
+        'action': 'tab-updated'
       });
     }
   }

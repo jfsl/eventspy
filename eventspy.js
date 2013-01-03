@@ -107,8 +107,11 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 	        break;
 	      }
 	      
-	      case 'clear': {
-	        accordionElem.children().remove();
+	      case 'tab-updated': {
+	        port.postMessage({
+      	    'action': 'start-frontend',
+		        'tabId': chrome.devtools.inspectedWindow.tabId 
+	        });
 	        break;
 	      }
 		  }
