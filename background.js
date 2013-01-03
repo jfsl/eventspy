@@ -22,7 +22,7 @@ chrome.extension.onConnect.addListener(function(port) {
 	    
 		switch (msg.action) {
 		
-      case "eventDump": {
+      case "event-dump": {
         if (subscribers[port.sender.tab.id] != null) {
           if (msg.dump.length > 0) {
             for (idx = 0; idx < subscribers[port.sender.tab.id].length; idx++) {

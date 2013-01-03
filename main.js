@@ -203,7 +203,7 @@ var comm = (function () {
 		  if (port) {
 		
 			  port.postMessage({
-				  'action': 'eventDump', 
+				  'action': 'event-dump', 
 				  'dump': queue}
 			  );
 		

@@ -100,7 +100,7 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 		
 	  port.onMessage.addListener(function(msg) {
 		  switch (msg.action) {
-	      case 'eventDump': {
+	      case 'event-dump': {
 		      if (msg.dump != undefined && msg.dump.length > 0) {
 				      drawBulk(msg.dump); 
 		      }
