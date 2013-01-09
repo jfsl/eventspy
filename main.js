@@ -120,7 +120,7 @@ var injectee = (function () {
       'eventspyType': 'created',
 		  'data': {
 			  'type': type,
-			  'listener': listener.valueOf(),
+			  'listener': "" + listener.valueOf() + "",
 			  'useCapture': useCapture
 		  }
 	  });
