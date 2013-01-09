@@ -13,14 +13,28 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 	function drawEventDiv(evtObj) {
 		var eventDiv      = _window.document.createElement('h3'),
 		    codeDiv       = _window.document.createElement('div'),
-		    eventDate     = new Date(evtObj.data.event.timeStamp);
+		    eventDate;
 
-		eventDiv.innerHTML = [eventDate.toLocaleTimeString(), " -> ",
-						              evtObj.data.event.name, " : ",
-						              evtObj.data.event.type, " (",				
-						              evtObj.data.event.pageX, ", ",
-						              evtObj.data.event.pageY, ")"].join('');
-						   
+    if (evtObj.eventspyType === 'fired') {
+    
+      eventDate = new Date(evtObj.data.event.timeStamp);
+    
+		  eventDiv.innerHTML = [eventDate.toLocaleTimeString(), " -> ",
+						                evtObj.data.event.name, " : ",
+						                evtObj.data.event.type, " (",				
+						                evtObj.data.event.pageX, ", ",
+						                evtObj.data.event.pageY, ")"].join('');
+						     
+	    codeDiv.innerHTML = evtObj.data.event.handler;
+    
+    } else if (evtObj.eventspyType === 'created') {
+      eventDiv.innerHTML = [evtObj.data.type, " : useCapture(",				
+						                evtObj.data.useCapture, ") "].join('');
+						                
+	    codeDiv.innerHTML = evtObj.data.listener;
+			
+    }
+    
 		eventDiv.addEventListener('mouseover', function (evt) {
 			
 			port.postMessage({
@@ -30,8 +44,6 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 			});
 			
 		}, false);
-
-    codeDiv.innerHTML = evtObj.data.event.handler;
 
     $(eventDiv).addClass( "ui-accordion-header ui-helper-reset ui-state-default ui-corner-all" )
                .hover(function () {
@@ -65,17 +77,35 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 
 	function drawBulk(dump) {
 		var idx = 0,
-		    fragment = document.createDocumentFragment(),
-	      accordionElem = _window.$('#accordion');
+		    logFragment = document.createDocumentFragment(),
+		    registeredFragment = document.createDocumentFragment(),
+	      logTab = _window.$('#log-tab'),
+	      registeredTab = _window.$('#registered-tab');
 
 		dump.forEach(function(eventObj) {
-		  var divs = drawEventDiv(eventObj)
-			fragment.appendChild(divs.eventdiv);
-			fragment.appendChild(divs.codediv);
+		  var divs;
+		  
+		  if (eventObj && eventObj.eventspyType) {
+  		  divs = drawEventDiv(eventObj);
+		  } 
+
+			console.log('eventspyType: ', eventObj.eventspyType);
+		  
+		  if (eventObj && eventObj.eventspyType === 'fired') {
+        logFragment.appendChild(divs.eventdiv);
+  			logFragment.appendChild(divs.codediv);	
+		  } else if (eventObj && eventObj.eventspyType === 'created') {
+		    registeredFragment.appendChild(divs.eventdiv);
+  			registeredFragment.appendChild(divs.codediv);
+		  }
+			
 		});
   
-    accordionElem.append(fragment);
+    logTab.append(logFragment);
+    registeredTab.append(registeredFragment);
+    
     _window.document.getElementById('log-tab').scrollTop = _window.document.getElementById('log-tab').scrollHeight;
+    _window.document.getElementById('registered-tab').scrollTop = _window.document.getElementById('registered-tab').scrollHeight;
 	}
 
 	panel.onShown.addListener(function(pWindow) {
@@ -89,11 +119,7 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 		  'tabId': chrome.devtools.inspectedWindow.tabId 
 	  });
 	  
-	  
-		var accordionElem;
-
 		_window       = pWindow,
-		accordionElem = _window.$('#accordion');
 		
 		_window.$('#tabs').css({
 		  'height': (_window.$(_window).height() - 10)

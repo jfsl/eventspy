@@ -107,7 +107,7 @@ var injectee = (function () {
 	  };
 	  
 	  comm.send({
-		  'eventspy-type': 'fired',
+		  'eventspyType': 'fired',
 		  'data': {
 		    'event': evtMsgObj
 		  }
@@ -117,14 +117,14 @@ var injectee = (function () {
 	Element.prototype.realAddEventListener = Element.prototype.addEventListener; 
 	Element.prototype.addEventListener = function (type, listener, useCapture) { 	
 	  comm.send({
-      'eventspy-type': 'created',
+      'eventspyType': 'created',
 		  'data': {
 			  'type': type,
-			  'listener': listener,
+			  'listener': listener.valueOf(),
 			  'useCapture': useCapture
 		  }
 	  });
-		
+	  
 	  this.realAddEventListener(type, listener, useCapture); 
 	
 	  this.realAddEventListener(type, function (evt) {
