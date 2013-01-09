@@ -74,8 +74,8 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 			fragment.appendChild(divs.codediv);
 		});
   
-    accordionElem.append(fragment);		
-    _window.document.body.scrollTop = _window.document.body.scrollHeight;
+    accordionElem.append(fragment);
+    _window.document.getElementById('log-tab').scrollTop = _window.document.getElementById('log-tab').scrollHeight;
 	}
 
 	panel.onShown.addListener(function(pWindow) {
@@ -95,9 +95,20 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
 		_window       = pWindow,
 		accordionElem = _window.$('#accordion');
 		
-		accordionElem.css({
-		  margin: '3px'
-		})
+		_window.$('#tabs').css({
+		  'height': (_window.$(_window).height() - 10)
+		});
+		
+		_window.$('#tabs').tabs({heightStyle: 'fill'});
+		
+		_window.$(_window).resize(function () {
+		
+			_window.$('#tabs').css({
+		    'height': (_window.$(_window).height() - 10)
+  		});
+		
+		  _window.$('#tabs').tabs('refresh');
+		});
 		
 	  port.onMessage.addListener(function(msg) {
 		  switch (msg.action) {

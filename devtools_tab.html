@@ -3,15 +3,41 @@
         <link href="style.css" rel="stylesheet" type="text/css" />
         <link href="css/start/jquery-ui.css" rel="stylesheet" type="text/css" />
         <script src="jquery.js"></script>
+        <script src="jquery-ui.js"></script>
         <script src="beautify.js"></script>
         <style>
           body {
            font-size: 10px;
+           margin: 0 0 0 0;
+           padding: 0 0 0 0;
+           overflow: hidden;
           }
+          
+          #log-tab {
+            margin: 0 0 0 0;
+            padding: 0 0 0 0;
+          }
+          
         </style>
     </head>
 	<body>
-	  <div id="accordion">  
+	  <div id="tabs">
+	    <ul> 
+	      <li><a href="#registered-tab">Registered</a></li>
+	      <li><a href="#log-tab">Log</a></li>
+	    </ul>
+	    
+	    <div id="registered-tab">
+	      <h1>registered</h1>
+	    </div>
+	    
+	    <div id="log-tab">
+	      
+	      <div id="accordion">  
+	      </div>
+	      
+	    </div>
 	  </div>
+	
   </body>
 </html>
