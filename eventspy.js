@@ -54,7 +54,6 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
                  'padding': '2px',
                  'font-size': '14px',
                }).click(function () {
-                  console.log($(codeDiv).data('beautified'));
                  if ($(codeDiv).data('beautified') == null) {
                    $(codeDiv).html(_window.js_beautify($(codeDiv).html()).replace(/\n/g, "<br/>").replace(/ /g, "&nbsp;"));
                    $(codeDiv).data('beautified', true)
@@ -89,8 +88,6 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
   		  divs = drawEventDiv(eventObj);
 		  } 
 
-			console.log('eventspyType: ', eventObj.eventspyType);
-		  
 		  if (eventObj && eventObj.eventspyType === 'fired') {
         logFragment.appendChild(divs.eventdiv);
   			logFragment.appendChild(divs.codediv);	
