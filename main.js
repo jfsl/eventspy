@@ -9,15 +9,23 @@ port.onDisconnect.addListener(function (evt) {
 });
 
 port.onMessage.addListener(function (msg) {
+  var highlighted, 
+      obj;
+ 
   switch (msg.action) {
     case "highlight": {
+      highlighted = document.querySelector('.highlight');
       
-      $('.highlight').each(function (idx, obj) {
-        $(obj).removeClass('highlight');
-      });
+      if (highlighted) {
+        highlighted.className = highlighted.className.replace('highlight', '');
+      }
       
-      var obj = $(['[data-eventspy-target-node-id*="', msg.targetNodeID, '"]'].join(''));
-      obj.addClass('highlight');
+      obj = document.querySelector(['[data-eventspy-target-node-id*="', msg.targetNodeID, '"]'].join(''));
+      
+      if (obj) {
+        obj.className = obj.className + ' highlight';
+        console.log(obj);
+      }
       
       break;
     }
@@ -25,7 +33,7 @@ port.onMessage.addListener(function (msg) {
     case "start-frontend": {
       
       state = "start";
-      $('#eventspy-status').html(state);
+      document.querySelector('#eventspy-status').innerHTML = state;
       
     }
   }
@@ -59,7 +67,7 @@ var injectee = (function () {
 				queue.forEach(function (message) {
 					var container = document.createElement('div');
 					container.style.display = 'none';
-					container.setAttribute('data-eventspy-msg', true);
+					container.dataset.dataEventspyMsg = true;
 					try {
 						container.innerHTML = JSON.stringify(message);
 					} catch (ex) {}
@@ -158,6 +166,8 @@ var injectee = (function () {
               registerEvent(event, origCb);
               origCb.call(event, this);
             });
+            
+            node.removeAttribute(prop);
           }
           
           node.dataset.eventSpyCb = true;
@@ -186,42 +196,46 @@ var injectee = (function () {
 var comm = (function () {
 	
 	var queue = [],
-		  injecteeStatus = $('#eventspy-status'),
+		  injecteeStatus = document.querySelector('#eventspy-status'),
 		  msgContainer = document.getElementById('eventspy-msg-pool');
 	
 	function poll() {
+	  var msgIdx = 0,
+	      messages;
 	
 	  if (msgContainer == null) {
 	    msgContainer = document.getElementById('eventspy-msg-pool');
 	  } else {
-		    
-		  $('div[data-eventspy-msg="true"]', msgContainer).each(function (idx, obj) {
-			  queue.push(JSON.parse(obj.innerHTML));
-			  $(obj).remove();
-		  });
+		  messages = msgContainer.children;
+		  
+		  for (msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+			  queue.push(JSON.parse(messages[msgIdx].innerHTML));
+			  msgContainer.removeChild(messages[msgIdx]);
+		  }
 	
 		  if (port) {
-		
 			  port.postMessage({
 				  'action': 'event-dump', 
 				  'dump': queue}
 			  );
-		
 		  }
 		  
 		  queue = [];
-		  injecteeStatus.html(state);
+		  
+		  if (injecteeStatus) {
+		    injecteeStatus.innerHTML = state;
+		  }
 		  
 		}
 		
-		if (injecteeStatus.length <= 0) {
-			injecteeStatus = $('#eventspy-status');
+		if (injecteeStatus && injecteeStatus.length <= 0) {
+			injecteeStatus = document.querySelector('#eventspy-status');
 		}
 	};
 	
 	return {
 		startPoll: function () {
-		  $('#eventspy').bind('DOMSubtreeModified', poll);
+		  document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
 			setInterval(poll, 1000);
 		}
 	};
@@ -232,5 +246,4 @@ var scriptTag = document.createElement('script');
 scriptTag.innerHTML = "(" + injectee + ")();";
 
 document.getElementsByTagName('head')[0].appendChild(scriptTag);
-
 comm.startPoll();
