@@ -24,7 +24,6 @@ port.onMessage.addListener(function (msg) {
       
       if (obj) {
         obj.className = obj.className + ' highlight';
-        console.log(obj);
       }
       
       break;
