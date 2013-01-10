@@ -1,6 +1,6 @@
 {
   "name": "Event Spy",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "manifest_version": 2,
   "description": "Spy on the events listened for on a page",
   "icons": { 
