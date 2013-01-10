@@ -32,7 +32,11 @@ port.onMessage.addListener(function (msg) {
     case "start-frontend": {
       
       state = "start";
-      document.querySelector('#eventspy-status').innerHTML = state;
+      stateElem = document.querySelector('#eventspy-status');
+
+      if (stateElem) {
+        stateElem.innerHTML = state;
+      }
       
     }
   }
