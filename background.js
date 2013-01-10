@@ -26,7 +26,17 @@ chrome.extension.onConnect.addListener(function(port) {
         if (subscribers[port.sender.tab.id] != null) {
           if (msg.dump.length > 0) {
             for (idx = 0; idx < subscribers[port.sender.tab.id].length; idx++) {
-	            subscribers[port.sender.tab.id][idx].postMessage(msg);
+	            try {
+	              if (subscribers[port.sender.tab.id][idx]) {
+	                subscribers[port.sender.tab.id][idx].postMessage(msg);
+	              }
+	            } catch (ex) {
+	              if (ex.message === 'Attempting to use a disconnected port object') {
+	                subscribers[port.sender.tab.id][idx] = undefined;
+	              } else {
+	                throw ex;
+	              }
+	            }
             }
           }
         }
