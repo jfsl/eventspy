@@ -165,12 +165,10 @@ var injectee = (function () {
           origCb = node[prop];
           
           if (!node.dataset.eventSpyCb) {
-            node[prop] = (function (event) {
+            node[prop] = function (event) {
               registerEvent(event, origCb);
-              origCb.call(event, this);
-            });
-            
-            node.removeAttribute(prop);
+              origCb.call(this, event);
+            };
           }
           
           node.dataset.eventSpyCb = true;
