@@ -14,16 +14,16 @@ port.onMessage.addListener(function (msg) {
  
   switch (msg.action) {
     case "highlight": {
-      highlighted = document.querySelector('.highlight');
+      highlighted = document.querySelector('.eventspy-highlight');
       
       if (highlighted) {
-        highlighted.className = highlighted.className.replace('highlight', '');
+        highlighted.className = highlighted.className.replace('eventspy-highlight', '');
       }
       
       obj = document.querySelector(['[data-eventspy-target-node-id*="', msg.targetNodeID, '"]'].join(''));
       
       if (obj) {
-        obj.className = obj.className + ' highlight';
+        obj.className = obj.className + ' eventspy-highlight';
       }
       
       break;
