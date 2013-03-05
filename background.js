@@ -15,28 +15,28 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
 
 chrome.extension.onConnect.addListener(function(port) {
 
-	console.assert(port.name == "eventspy");
+  console.assert(port.name == "eventspy");
 
-	port.onMessage.addListener(function(msg) {
-	  var idx = 0;
-	    
-		switch (msg.action) {
-		
+  port.onMessage.addListener(function(msg) {
+    var idx = 0;
+      
+    switch (msg.action) {
+    
       case "event-dump": {
         if (subscribers[port.sender.tab.id] != null) {
           if (msg.dump.length > 0) {
             for (idx = 0; idx < subscribers[port.sender.tab.id].length; idx++) {
-	            try {
-	              if (subscribers[port.sender.tab.id][idx]) {
-	                subscribers[port.sender.tab.id][idx].postMessage(msg);
-	              }
-	            } catch (ex) {
-	              if (ex.message === 'Attempting to use a disconnected port object') {
-	                subscribers[port.sender.tab.id][idx] = undefined;
-	              } else {
-	                throw ex;
-	              }
-	            }
+              try {
+                if (subscribers[port.sender.tab.id][idx]) {
+                  subscribers[port.sender.tab.id][idx].postMessage(msg);
+                }
+              } catch (ex) {
+                if (ex.message === 'Attempting to use a disconnected port object') {
+                  subscribers[port.sender.tab.id][idx] = undefined;
+                } else {
+                  throw ex;
+                }
+              }
             }
           }
         }
@@ -108,5 +108,5 @@ chrome.extension.onConnect.addListener(function(port) {
         break;
       }
     }
-	});
+  });
 });
