@@ -47,48 +47,48 @@ var injectee = (function () {
   var eventspyState     = document.createElement('div'),
       eventspyContainer = document.createElement('div');
     
-    eventspyContainer.id = "eventspy";
+  eventspyContainer.id = "eventspy";
+  
+  eventspyState.id = "eventspy-status";   
+  eventspyState.style.display = 'none';
+      
+  eventspyState.innerHTML = "stop";
+  eventspyContainer.appendChild(eventspyState);
+  document.body.appendChild(eventspyContainer);
     
-    eventspyState.id = "eventspy-status";   
-    eventspyState.style.display = 'none';
+  var comm = (function () {
         
-    eventspyState.innerHTML = "stop";
-    eventspyContainer.appendChild(eventspyState);
-    document.body.appendChild(eventspyContainer);
-    
-    var comm = (function () {
-        
-        var queue = [],
-              msgContainer = document.createElement('div');
-              
-      msgContainer.id = 'eventspy-msg-pool';
-      msgContainer.style.display = 'none';
-      eventspyContainer.appendChild(msgContainer);
-        
-        function send() {
-            if (eventspyState.innerHTML == "start") {
-                queue.forEach(function (message) {
-                    var container = document.createElement('div');
-                    container.style.display = 'none';
-                    container.dataset.dataEventspyMsg = true;
-                    try {
-                        container.innerHTML = JSON.stringify(message);
-                    } catch (ex) {}
-                    msgContainer.appendChild(container);
-                });
-                queue = [];
-            } 
+    var queue = [],
+        msgContainer = document.createElement('div');
+          
+    msgContainer.id = 'eventspy-msg-pool';
+    msgContainer.style.display = 'none';
+    eventspyContainer.appendChild(msgContainer);
+      
+    function send() {
+        if (eventspyState.innerHTML == "start") {
+            queue.forEach(function (message) {
+              var container = document.createElement('div');
+              container.style.display = 'none';
+              container.dataset.dataEventspyMsg = true;
+              try {
+                container.innerHTML = JSON.stringify(message);
+              } catch (ex) {}
+              msgContainer.appendChild(container);
+            });
+            queue = [];
+        } 
+    }
+      
+    return {
+        send: function (message) {
+            queue.push(message);
+            send();
         }
-        
-        return {
-            send: function (message) {
-                queue.push(message);
-                send();
-            }
-        };
-    })();
+    };
+  })();
     
-    var walkTheDOM = function walk(node, func) {
+  var walkTheDOM = function walk(node, func) {
     func(node);
     node = node.firstChild;
     while (node) {
@@ -97,8 +97,8 @@ var injectee = (function () {
     }
   };
     
-    function registerEvent(evt, listener) {
-      var targetNodeID;
+  function registerEvent(evt, listener) {
+    var targetNodeID;
 
     if (!evt.target.dataset.eventspyTargetNodeId) {
       targetNodeID = [evt.type, evt.pageX, evt.pageY, evt.timeStamp].join('-');
@@ -107,48 +107,48 @@ var injectee = (function () {
       targetNodeID = evt.target.dataset.eventspyTargetNodeId;
     }
 
-      evtMsgObj = {
-          "name": evt.toString(),
-          "type": evt.type,
-          "pageX": evt.pageX,
-          "pageY": evt.pageY,
-          "handler": "" + listener.valueOf() + "",
-          "timeStamp": evt.timeStamp,
-          "targetNodeID": targetNodeID, 
-      };
-      
-      comm.send({
-          'eventspyType': 'fired',
-          'data': {
-            'event': evtMsgObj
-          }
-      });
-    }
-    
-    Element.prototype.realAddEventListener = Element.prototype.addEventListener; 
-    Element.prototype.addEventListener = function (type, listener, useCapture) {    
-      comm.send({
-      'eventspyType': 'created',
-          'data': {
-              'type': type,
-              'listener': "" + listener.valueOf() + "",
-              'useCapture': useCapture
-          }
-      });
-      
-      this.realAddEventListener(type, listener, useCapture); 
-    
-      this.realAddEventListener(type, function (evt) {
-      if (eventspyState.innerHTML == "start") {
-        registerEvent(evt, listener);
-          }
-      }, useCapture);
+    evtMsgObj = {
+      "name": evt.toString(),
+      "type": evt.type,
+      "pageX": evt.pageX,
+      "pageY": evt.pageY,
+      "handler": "" + listener.valueOf() + "",
+      "timeStamp": evt.timeStamp,
+      "targetNodeID": targetNodeID, 
     };
     
-    walkTheDOM(document.body, function (node) {
+    comm.send({
+      'eventspyType': 'fired',
+      'data': {
+        'event': evtMsgObj
+      }
+    });
+  }
     
-      function checkEventProperties (node) {
-        var properties = [
+  Element.prototype.realAddEventListener = Element.prototype.addEventListener; 
+  Element.prototype.addEventListener = function (type, listener, useCapture) {    
+    comm.send({
+    'eventspyType': 'created',
+        'data': {
+            'type': type,
+            'listener': "" + listener.valueOf() + "",
+            'useCapture': useCapture
+        }
+    });
+    
+    this.realAddEventListener(type, listener, useCapture); 
+  
+    this.realAddEventListener(type, function (evt) {
+    if (eventspyState.innerHTML == "start") {
+      registerEvent(evt, listener);
+        }
+    }, useCapture);
+  };
+    
+  walkTheDOM(document.body, function (node) {
+  
+    function checkEventProperties (node) {
+      var properties = [
         'onclick',
         'ondblclick',
         'onmousedown',
@@ -175,10 +175,9 @@ var injectee = (function () {
         }
         
       });
-      }
-    
-      if (node.id != 'eventspy') {
-
+    }
+  
+    if (node.id != 'eventspy') {
       checkEventProperties(node);
       
       if (typeof node.realAddEventListener === 'function') {
@@ -186,61 +185,55 @@ var injectee = (function () {
           walkTheDOM(event.target, checkEventProperties);
         });      
       }
-      
     }
-    
-    });
-    
-    
+  
+  });
 }).valueOf();
 
 var comm = (function () {
+  var queue          = [],
+      injecteeStatus = document.querySelector('#eventspy-status'),
+      msgContainer   = document.getElementById('eventspy-msg-pool');
     
-    var queue = [],
-          injecteeStatus = document.querySelector('#eventspy-status'),
-          msgContainer = document.getElementById('eventspy-msg-pool');
+  function poll() {
+    var msgIdx = 0,
+        messages;
     
-    function poll() {
-      var msgIdx = 0,
-          messages;
-    
-      if (msgContainer == null) {
-        msgContainer = document.getElementById('eventspy-msg-pool');
-      } else {
-          messages = msgContainer.children;
-          
-          for (msgIdx = 0; msgIdx < messages.length; msgIdx++) {
-              queue.push(JSON.parse(messages[msgIdx].innerHTML));
-              msgContainer.removeChild(messages[msgIdx]);
-          }
-    
-          if (port) {
-              port.postMessage({
-                  'action': 'event-dump', 
-                  'dump': queue}
-              );
-          }
-          
-          queue = [];
-          
-          if (injecteeStatus) {
-            injecteeStatus.innerHTML = state;
-          }
-          
-        }
-        
-        if (injecteeStatus && injecteeStatus.length <= 0) {
-            injecteeStatus = document.querySelector('#eventspy-status');
-        }
-    };
-    
-    return {
-        startPoll: function () {
-          document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
-            setInterval(poll, 1000);
-        }
-    };
+    if (msgContainer == null) {
+      msgContainer = document.getElementById('eventspy-msg-pool');
+    } else {
+      messages = msgContainer.children;
+      
+      for (msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+        queue.push(JSON.parse(messages[msgIdx].innerHTML));
+        msgContainer.removeChild(messages[msgIdx]);
+      }
 
+      if (port) {
+        port.postMessage({
+          'action': 'event-dump', 
+          'dump': queue}
+        );
+      }
+      
+      queue = [];
+      
+      if (injecteeStatus) {
+        injecteeStatus.innerHTML = state;
+      }  
+    } 
+      
+    if (injecteeStatus && injecteeStatus.length <= 0) {
+      injecteeStatus = document.querySelector('#eventspy-status');
+    }
+  }
+    
+  return {
+    startPoll: function () {
+      document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
+      setInterval(poll, 1000);
+    }
+  };
 })();
 
 var scriptTag = document.createElement('script');
