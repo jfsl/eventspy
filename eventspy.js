@@ -2,11 +2,6 @@ var port = chrome.extension.connect({
   name : "eventspy"
 });
 
-port.onDisconnect.addListener(function (evt) {
-  port.postMessage({'action': 'unsubscribe'});
-  port = undefined;
-});
-
 chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.html", function(panel) {
   var _window;
 
@@ -111,45 +106,54 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
       'tabId': chrome.devtools.inspectedWindow.tabId 
     });
     
-    port.postMessage({
-      'action': 'start-frontend',
-      'tabId': chrome.devtools.inspectedWindow.tabId 
-    });
+    _window = pWindow;
     
-    _window       = pWindow,
-    
+    _window.$('#start-btn').click(function () {
+                             port.postMessage({
+                               'action': 'start-frontend',
+                               'tabId': chrome.devtools.inspectedWindow.tabId 
+                             });
+                             _window.$("#start").remove();
+                             _window.$('#tabs').tabs('refresh');
+                             _window.$("#tabs").show();
+                           });
+
     _window.$('#tabs').css({
       'height': (_window.$(_window).height() - 10)
     });
-    
-    _window.$('#tabs').tabs({heightStyle: 'fill'});
-    
+   
+     _window.$('#tabs').tabs({heightStyle: 'fill'});
+
     _window.$(_window).resize(function () {
-    
       _window.$('#tabs').css({
         'height': (_window.$(_window).height() - 10)
       });
-    
+      
       _window.$('#tabs').tabs('refresh');
     });
-    
-    port.onMessage.addListener(function(msg) {
-      switch (msg.action) {
-        case 'event-dump': {
-          if (msg.dump != undefined && msg.dump.length > 0) {
-              drawBulk(msg.dump); 
+
+    if (!port.hasListener) {
+      port.onMessage.addListener(function(msg) {
+        switch (msg.action) {
+          case 'event-dump': {
+            if (msg.dump != undefined && msg.dump.length > 0) {
+                drawBulk(msg.dump); 
+            }
+            break;
           }
-          break;
+          
+          case 'tab-updated': {
+            port.postMessage({
+              'action': 'start-frontend',
+              'tabId': chrome.devtools.inspectedWindow.tabId,
+              'reInject': false
+            });
+            break;
+          }
         }
-        
-        case 'tab-updated': {
-          port.postMessage({
-            'action': 'start-frontend',
-            'tabId': chrome.devtools.inspectedWindow.tabId 
-          });
-          break;
-        }
-      }
-    });
+      });
+      port.hasListener = true;
+    }
+
   });
 });

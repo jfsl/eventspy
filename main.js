@@ -1,59 +1,15 @@
 var port = chrome.extension.connect({name: "eventspy"}),
-    state = "stop";
-    
+    injected = false,
+    scriptTagInjected = false;
+
 port.postMessage({'action': 'frontend-subscribe'});
 
-port.onDisconnect.addListener(function (evt) {
-  port.postMessage({'action': 'frontend-unsubscribe'});
-    port = undefined;
-});
-
-port.onMessage.addListener(function (msg) {
-  var highlighted, 
-      obj;
- 
-  switch (msg.action) {
-    case "highlight": {
-      highlighted = document.querySelector('.eventspy-highlight');
-      
-      if (highlighted) {
-        highlighted.className = highlighted.className.replace('eventspy-highlight', '');
-      }
-      
-      obj = document.querySelector(['[data-eventspy-target-node-id*="', msg.targetNodeID, '"]'].join(''));
-      
-      if (obj) {
-        obj.className = obj.className + ' eventspy-highlight';
-      }
-      
-      break;
-    }
-    
-    case "start-frontend": {
-      
-      state = "start";
-      stateElem = document.querySelector('#eventspy-status');
-
-      if (stateElem) {
-        stateElem.innerHTML = state;
-      }
-      
-    }
-  }
-});
-
 var injectee = (function () {
-    
-  var eventspyState     = document.createElement('div'),
-      eventspyContainer = document.createElement('div');
-    
-  eventspyContainer.id = "eventspy";
+
+  var eventspyContainer = document.createElement('div');
   
-  eventspyState.id = "eventspy-status";   
-  eventspyState.style.display = 'none';
+  eventspyContainer.id = "eventspy";
       
-  eventspyState.innerHTML = "stop";
-  eventspyContainer.appendChild(eventspyState);
   document.body.appendChild(eventspyContainer);
     
   var comm = (function () {
@@ -65,34 +21,48 @@ var injectee = (function () {
     msgContainer.style.display = 'none';
     eventspyContainer.appendChild(msgContainer);
       
-    function send() {
-        if (eventspyState.innerHTML == "start") {
-            queue.forEach(function (message) {
-              var container = document.createElement('div');
-              container.style.display = 'none';
-              container.dataset.dataEventspyMsg = true;
-              try {
-                container.innerHTML = JSON.stringify(message);
-              } catch (ex) {}
-              msgContainer.appendChild(container);
-            });
-            queue = [];
-        } 
+    function send() { 
+      queue.forEach(function (message) {
+        var container = document.createElement('div');
+        container.style.display = 'none';
+        container.dataset.dataEventspyMsg = true;
+        try {
+          container.innerHTML = JSON.stringify(message);
+        } catch (ex) {}
+        msgContainer.appendChild(container);
+      });
+
+      queue = [];
+         
     }
       
     return {
         send: function (message) {
             queue.push(message);
-            send();
+            if (document.getElementById('eventspyStart')) {
+              send();
+            } 
         }
     };
   })();
     
+
+  function trampoline (x) {
+    while (x && x.func) {
+      x = x.func.apply(null, x.args);
+    }
+    return x;
+  }
+
   var walkTheDOM = function walk(node, func) {
     func(node);
     node = node.firstChild;
     while (node) {
-        walk(node, func);
+        trampoline({
+          func: walk,
+          args: [node, func]
+        });
+        //walk(node, func);
         node = node.nextSibling;
     }
   };
@@ -112,7 +82,7 @@ var injectee = (function () {
       "type": evt.type,
       "pageX": evt.pageX,
       "pageY": evt.pageY,
-      "handler": "" + listener.valueOf() + "",
+      "handler": "" + escape(listener.valueOf()) + "",
       "timeStamp": evt.timeStamp,
       "targetNodeID": targetNodeID, 
     };
@@ -124,11 +94,13 @@ var injectee = (function () {
       }
     });
   }
-    
-  Element.prototype.realAddEventListener = Element.prototype.addEventListener; 
-  Element.prototype.addEventListener = function (type, listener, useCapture) {    
+
+  if (typeof Element.prototype.realAddEventListener !== 'function') {
+    Element.prototype.realAddEventListener = Element.prototype.addEventListener;
+  }
+  Element.prototype.addEventListener = function (type, listener, useCapture) {
     comm.send({
-    'eventspyType': 'created',
+      'eventspyType': 'created',
         'data': {
             'type': type,
             'listener': "" + listener.valueOf() + "",
@@ -137,15 +109,12 @@ var injectee = (function () {
     });
     
     this.realAddEventListener(type, listener, useCapture); 
-  
     this.realAddEventListener(type, function (evt) {
-    if (eventspyState.innerHTML == "start") {
       registerEvent(evt, listener);
-        }
     }, useCapture);
   };
     
-  walkTheDOM(document.body, function (node) {
+ walkTheDOM(document.body, function (node) {
   
     function checkEventProperties (node) {
       var properties = [
@@ -188,17 +157,24 @@ var injectee = (function () {
     }
   
   });
+
 }).valueOf();
 
 var comm = (function () {
-  var queue          = [],
-      injecteeStatus = document.querySelector('#eventspy-status'),
-      msgContainer   = document.getElementById('eventspy-msg-pool');
+  var queue          = []
+      msgContainer   = document.getElementById('eventspy-msg-pool'),
+      eventspyStart  = document.createElement('div');
     
+  eventspyStart.id = 'eventspyStart';
+
   function poll() {
     var msgIdx = 0,
         messages;
     
+    if (document.getElementById('eventspy') && document.getElementById('eventspyStart') == undefined) {
+      document.getElementById('eventspy').appendChild(eventspyStart);
+    }
+
     if (msgContainer == null) {
       msgContainer = document.getElementById('eventspy-msg-pool');
     } else {
@@ -216,28 +192,73 @@ var comm = (function () {
         );
       }
       
-      queue = [];
-      
-      if (injecteeStatus) {
-        injecteeStatus.innerHTML = state;
-      }  
+      queue = [];  
     } 
-      
-    if (injecteeStatus && injecteeStatus.length <= 0) {
-      injecteeStatus = document.querySelector('#eventspy-status');
-    }
   }
     
   return {
     startPoll: function () {
-      document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
+
+      if (document.getElementById('eventspy')) {
+        document.getElementById('eventspy').appendChild(eventspyStart);
+      }
+
+      try {
+        document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
+      } catch (ex) {}
+
       setInterval(poll, 1000);
     }
   };
 })();
 
-var scriptTag = document.createElement('script');
-scriptTag.innerHTML = "(" + injectee + ")();";
+port.onMessage.addListener(function (msg) {
+  var highlighted, 
+      obj,
+      scriptTag;
+ 
+  switch (msg.action) {
+    case "highlight": {
 
-document.getElementsByTagName('head')[0].appendChild(scriptTag);
-comm.startPoll();
+      highlighted = document.querySelector('.eventspy-highlight');
+      
+      if (highlighted) {
+        highlighted.className = highlighted.className.replace('eventspy-highlight', '');
+      }
+      
+      obj = document.querySelector(['[data-eventspy-target-node-id*="', msg.targetNodeID, '"]'].join(''));
+      
+      if (obj) {
+        obj.className = obj.className + ' eventspy-highlight';
+      }
+      
+      break;
+    }
+    
+    case "start-frontend": {
+      scriptTag = document.createElement('script');
+      scriptTag.innerHTML = "(" + injectee + ")();";
+
+      if (!scriptTagInjected) {
+        document.getElementsByTagName('head')[0].appendChild(scriptTag);
+        console.log('injected');
+        scriptTagInjected = true;
+      }
+
+      document.addEventListener('DOMSubtreeModified', domSubMod, false);
+
+      var startSending = function () {
+        comm.startPoll();
+        document.removeEventListener('DOMSubtreeModified', domSubMod, false);
+      };
+
+      var bump = setTimeout(startSending, 5000); 
+      
+      var domSubMod = function () {
+        console.log('dom mod bump');
+        clearTimeout(bump);
+        bump = setTimeout(startSending, 5000);         
+      };
+    }
+  }
+});

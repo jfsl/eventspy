@@ -7,9 +7,11 @@
         <style>
           body {
            font-size: 10px;
+           font-family: Verdana,Arial,sans-serif; 
            margin: 0 0 0 0;
            padding: 0 0 0 0;
            overflow: hidden;
+           background-color: rgb(214, 221, 229);
           }
           
           #log-tab {
@@ -21,11 +23,30 @@
             margin: 0 0 0 0;
             padding: 0 0 0 0;
           }
+
+          #start {
+            font-size: 18pt;
+            text-align: center;
+            width: 350px;
+            margin-top: 55px;
+            margin-right: auto;
+            margin-left: auto;
+          }
+
+          #start a {
+            color: blue;
+            text-shadow:  1px 1px gray;
+            text-decoration: none;
+          }
+
+          #start img {
+            vertical-align: middle;
+          }
           
         </style>
     </head>
   <body>
-    <div id="tabs">
+    <div id="tabs" style="display:none">
       <ul> 
         <li><a href="#log-tab">Log</a></li>
         <li><a href="#registered-tab">Registered</a></li>
@@ -38,6 +59,11 @@
       <div id="log-tab">
         
       </div>
+    </div>
+
+    <div id="start">
+      <img src="/icon48.png" />
+      <a href="#" id="start-btn">Start Event Spy</a>
     </div>
   
   </body>

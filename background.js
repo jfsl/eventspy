@@ -13,12 +13,25 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
   }
 });
 
+function postMsg(port, msg) {
+  try{
+    port.postMessage(msg);
+  } catch (ex) {
+    if (ex.message === 'Attempting to use a disconnected port object') {
+      return false;
+    } else {
+      throw ex;
+    }
+  }
+}
+
 chrome.extension.onConnect.addListener(function(port) {
 
   console.assert(port.name == "eventspy");
 
   port.onMessage.addListener(function(msg) {
-    var idx = 0;
+    var idx = 0,
+        found = false;
       
     switch (msg.action) {
     
@@ -48,40 +61,53 @@ chrome.extension.onConnect.addListener(function(port) {
         if (subscribers[msg.tabId] == null) {
             subscribers[msg.tabId] = [];
         }
-    
-        subscribers[msg.tabId].push(port);
-        
-        break;
-      }
-      
-      case "unsubscribe": {
-        if (subscribers[port.sender.tab.id] != null) {
-          delete subscribers[port.sender.tab.id];
+
+        if (subscribers.length > 0) {
+          console.log(subscribers[msg.tabId]);
+          subscribers[msg.tabId].forEach(function (subscriber) {
+            if (subscriber.portId_ == port.portId_) {
+              found = true;
+            }
+          });
         }
+        
+        if (!found) {
+          subscribers[msg.tabId].push(port);
+        } 
+
+        console.log('found: ', found);
+        
         break;
       }
 
       case "frontend-subscribe": {
 
         if (frontends[port.sender.tab.id] == null) {
-            frontends[port.sender.tab.id] = [];
+            frontends[port.sender.tab.id] = {
+              injected: false,
+              ports: []
+            };
+        } else {
+          frontends[port.sender.tab.id].ports.push(port);
+        }
+
+        if (frontends[port.sender.tab.id].injected) {
+          frontends[port.sender.tab.id].ports.forEach(function (pPort) {
+            var result = postMsg(pPort, {
+              'action': 'start-frontend'
+            });
+            console.log('frontends: start-frontend');
+          }); 
         }
         
-        frontends[port.sender.tab.id].push(port);
-        
-        break;
-      }
-
-      case "frontend-unsubscribe": {
-        delete frontends[frontends.indexOf(port)];
         break;
       }
 
       case "highlight": {
         if (frontends[msg.tabId] != null) {
-          for (idx = 0; idx < frontends[msg.tabId].length; idx++) {
+          for (idx = 0; idx < frontends[msg.tabId].ports.length; idx++) {
             try {
-              frontends[msg.tabId][idx].postMessage(msg);
+              frontends[msg.tabId].ports[idx].postMessage(msg);
             } catch (ex) {
               // do nothing
             }
@@ -92,12 +118,10 @@ chrome.extension.onConnect.addListener(function(port) {
       
       case "start-frontend": {
         if (frontends[msg.tabId] != null) {
-          for (idx = 0; idx < frontends[msg.tabId].length; idx++) {
-            try {
-              frontends[msg.tabId][idx].postMessage(msg);
-            } catch (ex) {
-              // do nothing
-            }
+          if (!frontends[msg.tabId].injected || msg.reInject) {
+            chrome.tabs.reload(msg.tabId, function () {
+              frontends[msg.tabId].injected = true;
+            });
           }
         }
         break;
