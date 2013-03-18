@@ -20,13 +20,13 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
                             evtObj.data.event.pageX, ", ",
                             evtObj.data.event.pageY, ")"].join('');
                  
-      codeDiv.innerHTML = evtObj.data.event.handler;
+      codeDiv.innerHTML = unescape(evtObj.data.event.handler);
     
     } else if (evtObj.eventspyType === 'created') {
       eventDiv.innerHTML = [evtObj.data.type, " : useCapture(",       
                             evtObj.data.useCapture, ") "].join('');
                             
-      codeDiv.innerHTML = evtObj.data.listener;
+      codeDiv.innerHTML = unescape(evtObj.data.event.handler);
       
     }
     
