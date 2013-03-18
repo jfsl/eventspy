@@ -64,8 +64,6 @@ chrome.devtools.panels.create("Event Spy", "devtools_icon.png", "devtools_tab.ht
               })
               .hide();
     
-    $(eventDiv)
-    
     return {'eventdiv': eventDiv, 'codediv': codeDiv}
   }
 

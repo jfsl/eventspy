@@ -63,7 +63,6 @@ chrome.extension.onConnect.addListener(function(port) {
         }
 
         if (subscribers.length > 0) {
-          console.log(subscribers[msg.tabId]);
           subscribers[msg.tabId].forEach(function (subscriber) {
             if (subscriber.portId_ == port.portId_) {
               found = true;
@@ -74,8 +73,6 @@ chrome.extension.onConnect.addListener(function(port) {
         if (!found) {
           subscribers[msg.tabId].push(port);
         } 
-
-        console.log('found: ', found);
         
         break;
       }
@@ -96,7 +93,6 @@ chrome.extension.onConnect.addListener(function(port) {
             var result = postMsg(pPort, {
               'action': 'start-frontend'
             });
-            console.log('frontends: start-frontend');
           }); 
         }
         

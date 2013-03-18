@@ -84,7 +84,7 @@ var injectee = (function () {
       "pageY": evt.pageY,
       "handler": "" + escape(listener.valueOf()) + "",
       "timeStamp": evt.timeStamp,
-      "targetNodeID": targetNodeID, 
+      "targetNodeID": targetNodeID
     };
     
     comm.send({
@@ -99,12 +99,16 @@ var injectee = (function () {
     Element.prototype.realAddEventListener = Element.prototype.addEventListener;
   }
   Element.prototype.addEventListener = function (type, listener, useCapture) {
+    this.dataset.eventspyTargetNodeId = Math.random().toString(36).substring(2);
     comm.send({
       'eventspyType': 'created',
         'data': {
             'type': type,
             'listener': "" + listener.valueOf() + "",
-            'useCapture': useCapture
+            'useCapture': useCapture,
+            'event': {
+              "targetNodeID": this.dataset.eventspyTargetNodeId
+            }
         }
     });
     
@@ -241,7 +245,6 @@ port.onMessage.addListener(function (msg) {
 
       if (!scriptTagInjected) {
         document.getElementsByTagName('head')[0].appendChild(scriptTag);
-        console.log('injected');
         scriptTagInjected = true;
       }
 
@@ -255,7 +258,6 @@ port.onMessage.addListener(function (msg) {
       var bump = setTimeout(startSending, 5000); 
       
       var domSubMod = function () {
-        console.log('dom mod bump');
         clearTimeout(bump);
         bump = setTimeout(startSending, 5000);         
       };
