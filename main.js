@@ -114,11 +114,11 @@ var injectee = (function () {
     
     this.realAddEventListener(type, listener, useCapture); 
     this.realAddEventListener(type, function (evt) {
-      if (typeof jQuery !== undefined && jQuery._data(this, 'events')[type] !== undefined) {
-        jQuery._data(this, 'events')[type].forEach(function (jqEvent) {
-          evt.type = jqEvent.type;
-          registerEvent(evt, jqEvent.handler);
-        });
+      if (typeof jQuery != 'undefined' && jQuery._data(this, 'events')[type] !== undefined) {
+          jQuery._data(this, 'events')[type].forEach(function (jqEvent) {
+            evt.type = jqEvent.type;
+            registerEvent(evt, jqEvent.handler);
+          });
       } else {
         registerEvent(evt, listener);
       }
