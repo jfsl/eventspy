@@ -93,38 +93,37 @@ var injectee = (function () {
     }, useCapture);
   };
     
- walkTheDOM(document.body, function (node) {
-  
-    function checkEventProperties (node) {
-      var properties = [
-        'onclick',
-        'ondblclick',
-        'onmousedown',
-        'onmousemove',
-        'onmouseover',
-        'onmouseout',
-        'onmouseup'
-      ];
+  function checkEventProperties (node) {
+    var properties = [
+      'onclick',
+      'ondblclick',
+      'onmousedown',
+      'onmousemove',
+      'onmouseover',
+      'onmouseout',
+      'onmouseup'
+    ];
 
-      properties.forEach(function (prop) {
-        var origCb;
+    properties.forEach(function (prop) {
+      var origCb;
+      
+      if (typeof node[prop] === 'function') {
+        origCb = node[prop];
         
-        if (typeof node[prop] === 'function') {
-          origCb = node[prop];
-          
-          if (!node.dataset.eventSpyCb) {
-            node[prop] = function (event) {
-              registerEvent(event, origCb);
-              origCb.call(this, event);
-            };
-          }
-          
-          node.dataset.eventSpyCb = true;
+        if (!node.dataset.eventSpyCb) {
+          node[prop] = function (event) {
+            registerEvent(event, origCb);
+            origCb.call(this, event);
+          };
         }
         
-      });
-    }
-  
+        node.dataset.eventSpyCb = true;
+      }
+      
+    });
+  }
+
+  walkTheDOM(document.body, function (node) {
     if (node.id != 'eventspy') {
       checkEventProperties(node);
       
@@ -134,7 +133,6 @@ var injectee = (function () {
         });      
       }
     }
-  
   });
 
 }).valueOf();
