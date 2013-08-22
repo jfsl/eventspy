@@ -13,35 +13,9 @@ var injectee = (function () {
   document.body.appendChild(eventspyContainer);
     
   var comm = (function () {
-        
-    var queue = [],
-        msgContainer = document.createElement('div');
-          
-    msgContainer.id = 'eventspy-msg-pool';
-    msgContainer.style.display = 'none';
-    eventspyContainer.appendChild(msgContainer);
-      
-    function send() { 
-      queue.forEach(function (message) {
-        var container = document.createElement('div');
-        container.style.display = 'none';
-        container.dataset.dataEventspyMsg = true;
-        try {
-          container.innerHTML = JSON.stringify(message);
-        } catch (ex) {}
-        msgContainer.appendChild(container);
-      });
-
-      queue = [];
-         
-    }
-      
     return {
         send: function (message) {
-            queue.push(message);
-            if (document.getElementById('eventspyStart')) {
-              send();
-            } 
+          window.postMessage(message, '*');         
         }
     };
   })();
@@ -171,57 +145,12 @@ var injectee = (function () {
 
 }).valueOf();
 
-var comm = (function () {
-  var queue          = []
-      msgContainer   = document.getElementById('eventspy-msg-pool'),
-      eventspyStart  = document.createElement('div');
-    
-  eventspyStart.id = 'eventspyStart';
-
-  function poll() {
-    var msgIdx = 0,
-        messages;
-    
-    if (document.getElementById('eventspy') && document.getElementById('eventspyStart') == undefined) {
-      document.getElementById('eventspy').appendChild(eventspyStart);
-    }
-
-    if (msgContainer == null) {
-      msgContainer = document.getElementById('eventspy-msg-pool');
-    } else {
-      messages = msgContainer.children;
-      
-      for (msgIdx = 0; msgIdx < messages.length; msgIdx++) {
-        queue.push(JSON.parse(messages[msgIdx].innerHTML));
-        msgContainer.removeChild(messages[msgIdx]);
-      }
-
-      if (port) {
-        port.postMessage({
-          'action': 'event-dump', 
-          'dump': queue}
-        );
-      }
-      
-      queue = [];  
-    } 
-  }
-    
-  return {
-    startPoll: function () {
-
-      if (document.getElementById('eventspy')) {
-        document.getElementById('eventspy').appendChild(eventspyStart);
-      }
-
-      try {
-        document.querySelector('#eventspy').addEventListener('DOMSubtreeModified', poll);
-      } catch (ex) {}
-
-      setInterval(poll, 1000);
-    }
-  };
-})();
+window.addEventListener('message', function (event) {
+  port.postMessage({
+    'action': 'event-dump', 
+    'dump': [event.data]
+  });
+}, false);
 
 port.onMessage.addListener(function (msg) {
   var highlighted, 
@@ -258,7 +187,6 @@ port.onMessage.addListener(function (msg) {
       document.addEventListener('DOMSubtreeModified', domSubMod, false);
 
       var startSending = function () {
-        comm.startPoll();
         document.removeEventListener('DOMSubtreeModified', domSubMod, false);
       };
 
