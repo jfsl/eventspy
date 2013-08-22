@@ -175,19 +175,6 @@ port.onMessage.addListener(function (msg) {
         document.getElementsByTagName('head')[0].appendChild(scriptTag);
         scriptTagInjected = true;
       }
-
-      document.addEventListener('DOMSubtreeModified', domSubMod, false);
-
-      var startSending = function () {
-        document.removeEventListener('DOMSubtreeModified', domSubMod, false);
-      };
-
-      var bump = setTimeout(startSending, 5000); 
-      
-      var domSubMod = function () {
-        clearTimeout(bump);
-        bump = setTimeout(startSending, 5000);         
-      };
     }
   }
 });
