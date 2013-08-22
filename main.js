@@ -5,12 +5,6 @@ var port = chrome.extension.connect({name: "eventspy"}),
 port.postMessage({'action': 'frontend-subscribe'});
 
 var injectee = (function () {
-
-  var eventspyContainer = document.createElement('div');
-  
-  eventspyContainer.id = "eventspy";
-      
-  document.body.appendChild(eventspyContainer);
     
   var comm = (function () {
     return {
