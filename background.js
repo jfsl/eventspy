@@ -2,6 +2,8 @@ console.log('Event Spy -> background script started');
 
 var subscribers = [],
     frontends = [];
+
+chrome.runtime.setUninstallURL("http://jfsl.dk/eventspy-uninstall.php");
     
 chrome.tabs.onUpdated.addListener(function (tabId) {
   if (subscribers[tabId] != null) {
@@ -64,8 +66,10 @@ chrome.extension.onConnect.addListener(function(port) {
 
         if (subscribers.length > 0) {
           subscribers[msg.tabId].forEach(function (subscriber) {
-            if (subscriber.portId_ == port.portId_) {
-              found = true;
+            if (subscriber != null) {
+              if (subscriber.portId_ == port.portId_) {
+                found = true;
+              }
             }
           });
         }
